@@ -268,8 +268,31 @@ VGG19 demonstrated the best overall performance in terms of per-class recall, pa
 Based on the evaluation results, VGG19 was selected as the most promising model for further hyperparameter tuning
 
 ## Results and Future Work
+Hyper-parameter tuning was carried out on VGG19 model. The final tuned parameters were summarized:
+|Parameter| Optimized Value/Setting|
+|---|---|
+|Optimizer| AdamW|
+|Learning Rate| 0.00001|
+|Batch Size| 64|
+|Fully Connected Layer| Two FC layers of 512 nodes each, interspersed with a dropout layer (rate = 0.55). |
+|Weight training| All layers in VGG19 pretrained model was set to trainable from the onset|
 
-VGG19 achieved an overall accuracy of 55.3% and showed promising recall per class. While image quality limitations likely affected performance, the results demonstrate the potential of CNNs for automated inventory counting.
+***Hyper-parameter Tuned Result***
+The overall accuracy has improved from 0.4513 to 0.5340, with the individual class-level recall improved as well.
+
+![Confusion Matrix VGG19](./images/ConfusionMatrix_vgg19.png)
+
+|label|Class-Level Recall during Model Evaluation|Class-Level Recall after Hyper-parameter tuned|
+|---|---|---|
+|label 0:| 0.975| 0.98|
+|label 1:| 0.636| 0.694|
+|label 2:| 0.309| 0.536|
+|label 3:| 0.242| 0.319|
+|label 4:| 0.231| 0.351|
+|label 5:| 0.315| 0.324|
+
+
+VGG19 achieved an overall accuracy of 53.4% and showed promising recall per class. While image quality limitations likely affected performance, the results demonstrate the potential of CNNs for automated inventory counting.
 
 The model trained on the Amazon Bin Image Dataset could serve as a valuable starting point for object counting in other warehouse settings. By fine-tuning this pre-trained model with bin images specific to each warehouse, a rapid and cost-effective customization process can be achieved. This approach leverages the knowledge gained from the extensive Amazon dataset while tailoring the model to the unique characteristics of individual warehouses.
 
