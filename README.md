@@ -155,9 +155,33 @@ I extracted item and quantity information from metadata to facilitate image filt
 
 To mitigate the impact of low-quality images on model training, a Laplacian variance filter was applied to the dataset. This filter identifies blurred images by measuring the variance of their Laplacian gradients. A variance threshold of 100 was selected, resulting in the removal of 15% of the images deemed to be excessively blurred.
 
-Image Augmentation were considered during the model evaluation using the Keras' `ImageDataGenerator`. Given the marginal improvement gained from applying image augmentation techniques (e.g. horizontal/vertical flip, zoom, shear range, etc), in the expenses of 3-5 times model training additional time requires, Image Augmentation was removed fro the final model training. The huge amount of image data set in the Amazon Bin Image Challenge had sufficient model training data.
+Before the blurred images were removed, the images were computed and analysed for the RGB distribution, Grayscale distribution, and Texture analysis (Gabor Filter). 
 
-## Model Evaluation and Selection 
+![ImageAnalysis_RGB_Grayscale_Texture_before_blurred_removal_1](./images/Image_analysis_before1.png)
+![ImageAnalysis_RGB_Grayscale_Texture_before_blurred_removal_2](./images/Image_analysis_before2.png)
+
+After the blurred images were removed (i.e. removed images with Laplacian Variance Threshold less than 100), the remaining images were computed and analyzed for the RGB Distribution, Grayscale distribution, and Texture Analysis. 
+![ImageAnalysis_RGB_Grayscale_Texture_after_blurred_removal_1](./images/Image_analysis_after1.png)
+![ImageAnalysis_RGB_Grayscale_Texture_after_blurred_removal_2](./images/Image_analysis_after2.png)
+
+***RGB Histogram:***
+**Before**: The red, green, and blue channel histograms are more spread out, with a wider range of intensities.
+**After**: The histograms are narrower and shifted towards higher intensity values, especially for the green channel. This suggests that the blurred images were contributing a significant amount of lower intensity pixels, and removing them has concentrated the pixel intensities.
+
+***Grayscale Histogram:***
+**Before**: The distribution is broader and more evenly spread, with a peak around 100-120.
+**After**: The distribution is narrower and more peaked around 140-160. This confirms the observation from the RGB histograms that removing blurred images has removed lower intensity pixels, resulting in a more concentrated range of intensities in the remaining images.
+
+
+***Gabor Features:***
+**Before**: The average Gabor feature values are more evenly distributed, with a few features having slightly higher values.
+**After**: The distribution is similar but with a more distinct pattern. A few features now have noticeably higher normalized values, indicating that filtering has enhanced the contrast of certain textural patterns in the remaining images.
+
+
+Filtering out blurred images has resulted in a dataset of images with higher overall intensity and a narrower range of pixel values. This suggests that the blurred images were adding noise and reducing the contrast in the original dataset. The textural patterns captured by the Gabor features have become more pronounced after filtering, which could potentially improve the performance of texture-based image analysis tasks, contributing to the ability of the model to recognize and count the objects in the bin images. 
+
+
+## Model Evaluation and Selection
 
 ***Methodology***
 I have evaluated using the following pre-trained Convolutionary Neural Network (CNN) models as transfer learning for my model training. The implementation was based on Tensorflow Keras[^l5]
@@ -178,7 +202,8 @@ I have evaluated using the following pre-trained Convolutionary Neural Network (
 | MobileNetV2[^l10]      | MobileNetV2 is designed specifically for mobile and embedded vision applications. It uses depthwise separable convolutions to reduce the number of parameters and computational cost.                                                                                   | - Lightweight and efficient, making it suitable for mobile devices.<br /><br />- High performance per parameter, providing a good balance of accuracy and efficiency. <br /><br />- Faster inference times due to reduced model size.          | - Lower accuracy compared to larger, more complex models.<br /><br />- May not perform as well on very large or complex datasets.                                                 |
 | VGG19[^l11]            | VGG19 is part of the Visual Geometry Group (VGG) models, known for its simplicity and uniform architecture consisting of 19 layers. It is a deep learning model using a very small convolution filters (3x3)                                                            | - Simple and uniform architecture that is easy to understand and implement.<br /><br />- High performance on image classification benchmarks. <br /><br />- Good feature extraction capabilities.                                              | - Very large model size with a high number of parameters.<br /><br />- High computational cost and memory usage. <br /><br />- Relatively slower inference times.                 |
 
-For each model: 
+For each model:
+
 1. **Transfer Learning Initialization**: ImageNet weights were loaded as the initial model parameters to leverage knowledge learned from a large-scale image classification task.
 2. **Architecture Modification**: The top fully connected (FC) layers were removed and replaced with two new FC layers of 256 nodes each, interspersed with a dropout layer (rate = 0.55). A final FC layer with 6 nodes and softmax activation was added for the 6-class bin image object count classification. This customization allows the model to adapt to the specific task while retaining the learned features from the convolutional layers.
 3. **Training Configuration**: The AdamW optimizer was used with a base learning rate of 0.0001. All models were trained for 20 epochs with a batch size of 128. Early stopping was implemented to prevent overfitting.
@@ -204,7 +229,13 @@ model.summary(show_trainable=True)
 return model
 ```
 
+***Note on using Keras ImageDataGenerator***
+Image Augmentation were considered during the model evaluation using the Keras' `ImageDataGenerator`. Given the marginal improvement gained from applying image augmentation techniques (e.g. horizontal/vertical flip, zoom, shear range, etc), in the expenses of 3-5 times model training additional time requires, Image Augmentation was removed fro the final model training. The huge amount of image data set in the Amazon Bin Image Challenge had sufficient model training data.
+
+***Data for Model Evaluation***
+
 ***Evaluation Metrics***
+
 1. Primary Metric: Accuracy (overall proportion of correct predictions)
 2. Secondary Metric: Per-class recall (sensitivity), focusing on the ability to correctly identify the true number of objects in a bin, especially for higher object counts.
 3. Additional Analysis: Confusion matrices were generated to assess class-level performance and identify patterns of misclassification.
@@ -221,8 +252,8 @@ Most models achieved similar accuracy scores (ranging from 0.41 to 0.45), with t
 | MobilenetV2       | 0.4145   | 0.973       | 0.432       | 0.139       | 0.029       | 0.002       | 0.912       |
 | VGG19             | 0.4513   | 0.975       | 0.636       | 0.309       | 0.242       | 0.231       | 0.315       |
 
-
 While overall accuracy provides a general overview, the per-class recall revealed a consistent trend:
+
 - High Recall at Qty 0: All models excelled at identifying bins with zero objects.
 - Decreasing Recall with Higher Object Counts: As the number of objects increased, the recall dropped across all models, reflecting the growing complexity of the task.
 
@@ -232,10 +263,9 @@ In the context of multi-class classification, a confusion matrix provides a deta
 
 The off-diagonal elements reveal misclassifications. Values within a row but off the diagonal represent false negatives for that true class – cases where the model predicted a different count than the actual number of objects. Conversely, values within a column but off the diagonal represent false positives for that predicted class – cases where the model predicted that class, but the actual class was different.
 
-VGG19 demonstrated the best overall performance in terms of per-class recall, particularly for higher object counts. Its confusion matrix also exhibited a desirable pattern with a higher concentration of correct predictions along the diagonal and decreasing density further away. This suggests that when the model make errors, it is more likely to predict a quantity close to the true value, rather than a wildly different one. The matrix also does not exhibit an overwhelming bias towards predicting a particular class, demonstrating the model's ability to differentiate between various object counts. 
- 
-Based on the evaluation results, VGG19 was selected as the most promising model for further hyperparameter tuning
+VGG19 demonstrated the best overall performance in terms of per-class recall, particularly for higher object counts. Its confusion matrix also exhibited a desirable pattern with a higher concentration of correct predictions along the diagonal and decreasing density further away. This suggests that when the model make errors, it is more likely to predict a quantity close to the true value, rather than a wildly different one. The matrix also does not exhibit an overwhelming bias towards predicting a particular class, demonstrating the model's ability to differentiate between various object counts.
 
+Based on the evaluation results, VGG19 was selected as the most promising model for further hyperparameter tuning
 
 ## Results and Future Work
 
