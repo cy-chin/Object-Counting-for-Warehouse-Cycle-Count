@@ -212,21 +212,21 @@ A snapshot of the create model function for creating the ResNetModel, similarly 
 
 ```
 def create_ResnetModel():
-pre_trained_model = ResNet152V2(include_top = False,
-weights="imagenet",
-input_shape=train_images.shape[1:])
-pre_trained_model.trainable = Falsex = pre_trained_model.output
-x = Flatten()(x)
-x = Dense(256, activation='relu')(x)
-x = Dropout(0.55)(x)
-x = Dense(256, activation='relu')(x)
-x = Dropout(0.55)(x)
-predictions = Dense(nClasses, activation='softmax')(x)
+  pre_trained_model = ResNet152V2(include_top = False,
+  weights="imagenet",
+  input_shape=train_images.shape[1:])
+  pre_trained_model.trainable = Falsex = pre_trained_model.output
+  x = Flatten()(x)
+  x = Dense(256, activation='relu')(x)
+  x = Dropout(0.55)(x)
+  x = Dense(256, activation='relu')(x)
+  x = Dropout(0.55)(x)
+  predictions = Dense(nClasses, activation='softmax')(x)
 
-model = Model(inputs=pre_trained_model.input, outputs=predictions)
-model.summary(show_trainable=True)
+  model = Model(inputs=pre_trained_model.input, outputs=predictions)
+  model.summary(show_trainable=True)
 
-return model
+  return model
 ```
 
 ***Note on using Keras ImageDataGenerator***
